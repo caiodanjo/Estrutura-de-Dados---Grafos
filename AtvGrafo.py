@@ -1,10 +1,11 @@
 from typing import Dict, List, Tuple, Optional
 from math import isfinite
+from collections import deque
 
 
 class GrafoTransito:
 
-    def __init__(
+    def _init_(
         self,
         direcionado: bool = True,
         adjacencia_inicial: Optional[Dict[str, Dict[str, float]]] = None,
@@ -80,7 +81,7 @@ class GrafoTransito:
             linhas.append(f"{origem} -> {destinos_fmt}")
         return "\n".join(linhas)
 
-    def __repr__(self) -> str:
+    def _repr_(self) -> str:
         return f"GrafoTransito(direcionado={self.direcionado}, intersecoes={len(self.adj)}, ruas={self.numero_de_ruas()})"
 
     # ------------------ Suporte interno (Etapa 1) --------------------
@@ -185,3 +186,49 @@ class GrafoTransito:
 
         if not self.direcionado and destino in self.adj and origem in self.adj[destino]:
             del self.adj[destino][origem]
+
+    def listar_caminhos(self, origem: str) -> List[List[str]]:
+        """
+        Lista todos os caminhos possíveis a partir de uma interseção.
+        Usa busca em profundidade (DFS).
+        """
+        self._validar_intersecao_nome(origem)
+        if origem not in self.adj:
+            raise ValueError(f"Interseção '{origem}' não existe no grafo.")
+
+        caminhos: List[List[str]] = []
+
+        def dfs(atual: str, caminho: List[str]):
+            for vizinho in self.adj[atual]:
+                if vizinho not in caminho:  # evita ciclos
+                    novo_caminho = caminho + [vizinho]
+                    caminhos.append(novo_caminho)
+                    dfs(vizinho, novo_caminho)
+
+        dfs(origem, [origem])
+        return caminhos
+
+    def existe_trajeto(self, origem: str, destino: str) -> bool:
+        """
+        Verifica se existe algum caminho entre origem e destino.
+        Usa busca em largura (BFS).
+        """
+        self._validar_intersecao_nome(origem)
+        self._validar_intersecao_nome(destino)
+
+        if origem not in self.adj or destino not in self.adj:
+            raise ValueError("Uma das interseções informadas não existe.")
+
+        visitados = set()
+        fila = deque([origem])
+
+        while fila:
+            atual = fila.popleft()
+            if atual == destino:
+                return True
+            visitados.add(atual)
+            for vizinho in self.adj[atual]:
+                if vizinho not in visitados:
+                    fila.append(vizinho)
+
+        return False
