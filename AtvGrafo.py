@@ -273,6 +273,23 @@ class GrafoTransito:
         caminho.reverse()
         return (caminho, distancia[destino])
     
+    # Etapa 5 — Extras
+
+    def alterarTempo(self, origem, destino, novo_tempo):
+        if origem in self.mapa and destino in self.mapa[origem]:
+            self.mapa[origem][destino] = novo_tempo
+            print(f"Tempo atualizado: {origem} -> {destino} = {novo_tempo} min")
+        else:
+            print("Rua não encontrada para atualização.")
+
+    def adicionarRuaMaoUnica(self, origem, destino, tempo):
+        
+        if origem in self.mapa and destino in self.mapa:
+            self.mapa[origem][destino] = tempo
+            print(f"Rua de mão única adicionada: {origem} -> {destino}")
+        else:
+            print("Interseções inválidas.")
+    
 def exibir_menu():
     print("\n===== MENU DO SISTEMA =====")
     print("1. Adicionar interseção")
