@@ -2,10 +2,9 @@ from typing import Dict, List, Tuple, Optional
 from math import isfinite
 from collections import deque
 
-
 class GrafoTransito:
 
-    def _init_(
+    def __init__(
         self,
         direcionado: bool = True,
         adjacencia_inicial: Optional[Dict[str, Dict[str, float]]] = None,
@@ -81,7 +80,7 @@ class GrafoTransito:
             linhas.append(f"{origem} -> {destinos_fmt}")
         return "\n".join(linhas)
 
-    def _repr_(self) -> str:
+    def __repr__(self) -> str:
         return f"GrafoTransito(direcionado={self.direcionado}, intersecoes={len(self.adj)}, ruas={self.numero_de_ruas()})"
 
     # ------------------ Suporte interno (Etapa 1) --------------------
@@ -232,3 +231,138 @@ class GrafoTransito:
                     fila.append(vizinho)
 
         return False
+    
+    def caminho_mais_rapido(self, origem: str, destino: str) -> Tuple[List[str], float]:
+        self._validar_intersecao_nome(origem)
+        self._validar_intersecao_nome(destino)
+
+        if origem not in self.adj or destino not in self.adj:
+            raise ValueError("Origem e/ou destino não existem no grafo.")
+
+        nao_visitados = set(self.adj.keys())
+        distancia = {v: float("inf") for v in nao_visitados}
+        anterior = {v: None for v in nao_visitados}
+        distancia[origem] = 0
+
+        while nao_visitados:
+            atual = min(nao_visitados, key=lambda v: distancia[v])
+
+            if atual == destino:
+                break
+
+            nao_visitados.remove(atual)
+
+            if distancia[atual] == float("inf"):
+                break
+
+            for vizinho, tempo in self.adj[atual].items():
+                nova_dist = distancia[atual] + tempo
+                if nova_dist < distancia[vizinho]:
+                    distancia[vizinho] = nova_dist
+                    anterior[vizinho] = atual
+
+        if distancia[destino] == float("inf"):
+            return ([], float("inf"))
+
+        caminho = []
+        atual = destino
+        while atual is not None:
+            caminho.append(atual)
+            atual = anterior[atual]
+
+        caminho.reverse()
+        return (caminho, distancia[destino])
+    
+def exibir_menu():
+    print("\n===== MENU DO SISTEMA =====")
+    print("1. Adicionar interseção")
+    print("2. Adicionar rua")
+    print("3. Remover interseção")
+    print("4. Remover rua")
+    print("5. Exibir mapa atual")
+    print("6. Simular trânsito")
+    print("7. Adicionar restrição (bloqueio)")
+    print("8. Remover restrição")
+    print("9. Calcular caminho mais curto")
+    print("0. Sair")
+
+def main():
+    grafo = GrafoTransito(direcionado=True)
+    while True:
+        exibir_menu()
+        opcao = input("Escolha uma opção: ").strip()
+        if opcao == "1":
+            nome = input("Nome da interseção: ")
+            try:
+                grafo.adicionar_intersecao(nome)
+                print(f"Interseção '{nome}' adicionada.")
+            except Exception as e:
+                print(f"Erro: {e}")
+
+        elif opcao == "2":
+            origem = input("Origem: ")
+            destino = input("Destino: ")
+            tempo = input("Tempo (minutos): ")
+            try:
+                grafo.adicionar_rua(origem, destino, float(tempo))
+                print(f"Rua adicionada de {origem} -> {destino} ({tempo} min)")
+            except Exception as e:
+                print(f"Erro: {e}")
+
+        elif opcao == "3":
+            nome = input("Nome da interseção para remover: ")
+            try:
+                grafo.remover_intersecao(nome)
+                print(f"Interseção '{nome}' removida.")
+            except Exception as e:
+                print(f"Erro: {e}")
+
+        elif opcao == "4":
+            origem = input("Origem da rua: ")
+            destino = input("Destino da rua: ")
+            try:
+                grafo.remover_rua(origem, destino)
+                print(f"Rua {origem} -> {destino} removida.")
+            except Exception as e:
+                print(f"Erro: {e}")
+
+        elif opcao == "5":
+            print("\n📍 Mapa Atual:")
+            print(grafo.exibir())
+
+        elif opcao == "6":
+            print("🔄 Simulando trânsito...")
+            grafo.simular_transito()
+            print("Trânsito simulado com sucesso!")
+
+        elif opcao == "7":
+            origem = input("Origem da rua a bloquear: ")
+            destino = input("Destino da rua a bloquear: ")
+            grafo.adicionar_restricao(origem, destino)
+            print(f"Restrição adicionada em {origem} -> {destino}")
+
+        elif opcao == "8":
+            origem = input("Origem da restrição a remover: ")
+            destino = input("Destino da restrição a remover: ")
+            grafo.remover_restricao(origem, destino)
+            print(f"Restrição removida de {origem} -> {destino}")
+
+        elif opcao == "9":
+            origem = input("Interseção de origem: ")
+            destino = input("Interseção de destino: ")
+            caminho, tempo = grafo.caminho_mais_curto(origem, destino)
+            if caminho:
+                print(f"🚗 Caminho mais curto: {' -> '.join(caminho)}")
+                print(f"⏱️ Tempo estimado: {tempo:.2f} min")
+            else:
+                print("⚠️ Nenhum caminho disponível entre os pontos.")
+
+        elif opcao == "0":
+            print("Encerrando o programa.")
+            break
+
+        else:
+            print("Opção inválida. Tente novamente.")
+
+if __name__ == "__main__":
+    main()
